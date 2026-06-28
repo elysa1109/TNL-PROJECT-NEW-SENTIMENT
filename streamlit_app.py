@@ -94,7 +94,10 @@ def _download_nltk():
         "punkt", "punkt_tab", "stopwords", "wordnet",
         "omw-1.4", "averaged_perceptron_tagger", "averaged_perceptron_tagger_eng",
     ]:
-        nltk.download(res, quiet=True)
+        try:
+            nltk.download(res, quiet=True)
+        except Exception:
+            pass
 
 
 _download_nltk()
@@ -220,12 +223,19 @@ EXAMPLES = [
      "Flash floods in Johor have displaced over 15,000 residents, with rescue operations ongoing as authorities warn of continued heavy rainfall throughout the week, causing severe disruption to businesses and schools."),
 ]
 
+# ── Session state ──────────────────────────────────────────────────────────────
+if "input_text" not in st.session_state:
+    st.session_state["input_text"] = ""
+
+def _set_example(text: str):
+    st.session_state["input_text"] = text
+
 # ==============================================================================
 # UI
 # ==============================================================================
 st.markdown("""
 <div class="hero">
-  <h1>🇲🇾 Malaysian News Sentiment Analyser</h1>
+  <h1>Malaysian News Sentiment Analyser</h1>
   <p>Paste a Malaysian news headline or article — three ML models will classify its
   sentiment as <strong>Positive</strong>, <strong>Neutral</strong>, or <strong>Negative</strong>.</p>
 </div>
@@ -234,16 +244,18 @@ st.markdown("""
 # ── Example buttons ────────────────────────────────────────────────────────────
 st.markdown("**Try an example:**")
 cols_ex = st.columns(len(EXAMPLES))
-chosen_example = None
 for i, (label, text) in enumerate(EXAMPLES):
-    if cols_ex[i].button(label, use_container_width=True):
-        chosen_example = text
+    cols_ex[i].button(
+        label,
+        use_container_width=True,
+        on_click=_set_example,
+        args=(text,),
+    )
 
-# ── Text input ─────────────────────────────────────────────────────────────────
-default_val = chosen_example or ""
+# ── Text input  (key binds widget ↔ session_state automatically) ───────────────
 user_text = st.text_area(
     "Enter news text",
-    value=default_val,
+    key="input_text",
     height=140,
     placeholder="e.g. Malaysia's GDP grew by 4.3% in Q2, driven by strong manufacturing exports…",
     label_visibility="collapsed",
